@@ -9,45 +9,193 @@ keywords = [
   "str", "strdup", "strlen", "substr", "tan", "upper", "val",
 
 ]
+column = 0
+row = 0
+startingTokenColumn = 0
+startingTokenRow = 0
+allTokens = []
+lines = None
+word = ""
+class Token:
+    ttk = -1
+    l = -1
+    c = -1
+    lexema = ""
+    def __init__ (self, _ttk,_c,_l,_lexema = None):
+        self.ttk = _ttk
+        self.l = _l
+        self.c = _c
+        self.lexema = _lexema
 
-def main():
-  with open("test.txt", "r") as f:
-    lines = f.readlines()
-  column = 0
-  row = 0
-  isComment = False
-  for line in lines:
-    row += 1
+    def __str__(self):
+        if self.lexema == None:
+            return (str("<" + str(self.ttk) + "," + str(self.l) + "," + str(self.c) +  ">"))        
+        else:
+            return (str("<"+ str(self.ttk) + ","+str(self.lexema)+ "," + str(self.l) + "," + str(self.c) + ">"))
+		  
+
+def skipToNextLine():
+    global column, row
     column = 0
-    word = ""
-    for i in range(len(line)):
-      column += 1
-      if line[i] == '*':
-        if i + 1 >= len(line):
-          print(">>>> Error lexico(linea:"+str(row)+",posicion:"+str(column)+")")
-        elif line[i+1] == '/':
-          i += 1 # Not process the next character
-          isComment = False
-        
-      elif line[i] == '/':
-        if i + 1 >= len(line):
-          print(">>>> Error lexico(linea:"+str(row)+",posicion:"+str(column)+")")
-        elif line[i+1] == '/':
-          break # Ignore this line of code
-        elif line[i+1] == '*':
-          i += 1 # Not process the next character
-          isComment = True
-      elif not isComment and isAlnumOrUnderscore(line[i]):
-        word += line[i]
-      elif not isComment: 
-        if word in keywords:
-          print("<" + word + "," + str(row) + "," + str(column - len(word))  + ">")
-        elif word:
-          print("<id," + word + "," + str(row) + "," + str(column - len(word))  + ">")
-        word = ""
+    row += 1
 
 def isAlnumOrUnderscore(stringToCheck):
-  return stringToCheck.isalnum() or stringToCheck == "_"
+    return stringToCheck.isalnum() or stringToCheck == "_"
+
+
+def obtenerCaracterSiguiente():
+    global column, row, lines
+    if not lines:
+        with open("test.txt","r") as f:
+            lines = f.readlines()
+            return lines[0][0]
+    column += 1
+    if len(lines[row]) <= column:
+        column = 0
+        row += 1
+        if len(lines) <= row:
+            return None
+    return lines[row][column]
+
+def noAvanzar():
+    global column, row
+    if(column == 0):
+        row = row - 1
+        column = len(f[row])-1
+    else:
+        column = column-1
+        
+def main():
+    global allTokens
+    c = obtenerCaracterSiguiente()
+    estado = 0
+    while (c != None):
+        ##TODO: El archivo de entrada debe terminar en un espacio ' ' para reconocer
+        ##correctamente algunos caracteres, como el caracter de division /
+        estado = delta(estado,c)
+        c = obtenerCaracterSiguiente()
+    print(*allTokens, sep = "\n")
+    
+def delta(estadoActual, caracterLeido):
+    global allTokens, column, row, startingTokenColumn, startingTokenRow, word
+    
+    if(estadoActual == 0): ##Ningun Token actualmente en lectura
+        startingTokenColumn = column
+        startingTokenRow = row
+        if(caracterLeido == "/"):
+            return 1
+        elif(caracterLeido == "\\"):
+            return 3
+        elif(caracterLeido == "\""): 
+            word = "\""
+            return 4
+        elif(caracterLeido == "'"): 
+            word = "'"
+            return 5
+        elif(caracterLeido == "“"): 
+            word = "“"
+            return 6
+        
+        ##Triviales
+        elif(caracterLeido == "+"):
+            allTokens.append(Token("tk_suma",startingTokenColumn+1,startingTokenRow+1))
+            return 0
+        elif(caracterLeido == "-"):
+            allTokens.append(Token("tk_resta",startingTokenColumn+1,startingTokenRow+1))
+            return 0
+        elif(caracterLeido == "*"):
+            allTokens.append(Token("tk_mult",startingTokenColumn+1,startingTokenRow+1))
+            return 0
+        elif(caracterLeido == "%"):
+            allTokens.append(Token("tk_mod",startingTokenColumn+1,startingTokenRow+1))
+            return 0
+        elif(caracterLeido == "{"):
+            allTokens.append(Token("tk_llave_izq",startingTokenColumn+1,startingTokenRow+1))
+            return 0
+        elif(caracterLeido == "}"):
+            allTokens.append(Token("tk_llave_der",startingTokenColumn+1,startingTokenRow+1))
+            return 0
+        elif(caracterLeido == "("):
+            allTokens.append(Token("tk_par_izq",startingTokenColumn+1,startingTokenRow+1))
+            return 0
+        elif(caracterLeido == ")"):
+            allTokens.append(Token("tk_par_der",startingTokenColumn+1,startingTokenRow+1))
+            return 0
+        elif(caracterLeido == ")"):
+            allTokens.append(Token("tk_par_der",startingTokenColumn+1,startingTokenRow+1))
+            return 0
+        elif(caracterLeido == ":"):
+            allTokens.append(Token("tk_dospuntos",startingTokenColumn+1,startingTokenRow+1))
+            return 0
+        elif(caracterLeido == ";"):
+            allTokens.append(Token("tk_pyq",startingTokenColumn+1,startingTokenRow+1))
+            return 0
+        elif(caracterLeido == "="):
+            allTokens.append(Token("tk_asig",startingTokenColumn+1,startingTokenRow+1))
+            return 0
+        elif(caracterLeido == ","):
+            allTokens.append(Token("tk_coma",startingTokenColumn+1,startingTokenRow+1))
+            return 0
+        ##End Triviales
+        
+        else:
+            return 0
+        
+    if(estadoActual == 1): #El anterior fue un /
+        if(caracterLeido == "/"): # //
+            skipToNextLine()
+            return 0
+        elif(caracterLeido == "*"): # /*
+            return 2
+        else: # / (division)
+            noAvanzar()
+            allTokens.append(Token("tk_division",startingTokenColumn+1,startingTokenRow+1))
+            return 0
+            
+    if(estadoActual == 2): #Anteriores fueron /*
+        if(caracterLeido == "*"):
+            return 3
+        else: return 2
+        
+    if(estadoActual == 3): #Anteriores /* y *
+        if(caracterLeido == "/"):
+            return 0
+        else:
+            return 2 ##Si el * no estaba seguido de
+        
+    if(estadoActual == 4): #Inicio de Cadena Anterior "
+        if(caracterLeido == "\""):#Fin de cadena "
+            word = word + "\""
+            allTokens.append(Token("tk_cadena",startingTokenColumn+1,startingTokenRow+1, word))
+            return 0
+        else: #Continuacion de cadena
+            word = word + caracterLeido
+            return 4
+        
+    if(estadoActual == 5): #Inicio de Cadena Anterior '
+        if(caracterLeido == "'"):#Fin de cadena '
+            word = word + "'"
+            allTokens.append(Token("tk_cadena",startingTokenColumn+1,startingTokenRow+1, word))
+            return 0
+        else: #Continuacion de cadena
+            word = word + caracterLeido
+            return 5
+        
+    if(estadoActual == 6): #Inicio de Cadena Anterior “
+        if(caracterLeido == "”"):#Fin de cadena ”
+            word = word + "”"
+            allTokens.append(Token("tk_cadena",startingTokenColumn+1,startingTokenRow+1, word))
+            return 0
+        else: #Continuacion de cadena
+            word = word + caracterLeido
+            return 6
+
 
 if __name__ == "__main__":  
-  main()
+    main()
+            
+            
+
+
+    
+        
