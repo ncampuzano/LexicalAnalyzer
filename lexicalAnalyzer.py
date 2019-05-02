@@ -4,9 +4,6 @@ keywords = [
   "not", "programa", "retorna", "var", "const", "fin", "libext", "or", "ref", "si", "variables"
 ]
 
-def isLetter(letter):
-  return (letter >= 65 and letter <= 90) or (letter >= 97 and letter <= 122)
-
 def main():
   f = open("test.txt", "r")
   lines = f.readlines()
