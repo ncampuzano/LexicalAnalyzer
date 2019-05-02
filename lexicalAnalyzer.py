@@ -8,7 +8,6 @@ keywords = [
   "pcount", "pos", "random", "sec", "set_stdin", "set_stdout", "sin", "sqrt",
   "str", "strdup", "strlen", "substr", "tan", "upper", "val",
 
-  
 ]
 
 def main():
@@ -16,15 +15,31 @@ def main():
     lines = f.readlines()
   column = 0
   row = 0
+  isComment = False
   for line in lines:
     row += 1
     column = 0
     word = ""
-    for letter in line:
+    for i in range(len(line)):
       column += 1
-      if isAlnumOrUnderscore(letter):
-        word += letter
-      else: 
+      if line[i] == '*':
+        if i + 1 >= len(line):
+          print(">>>> Error lexico(linea:"+str(row)+",posicion:"+str(column)+")")
+        elif line[i+1] == '/':
+          i += 1 # Not process the next character
+          isComment = False
+        
+      elif line[i] == '/':
+        if i + 1 >= len(line):
+          print(">>>> Error lexico(linea:"+str(row)+",posicion:"+str(column)+")")
+        elif line[i+1] == '/':
+          break # Ignore this line of code
+        elif line[i+1] == '*':
+          i += 1 # Not process the next character
+          isComment = True
+      elif not isComment and isAlnumOrUnderscore(line[i]):
+        word += line[i]
+      elif not isComment: 
         if word in keywords:
           print("<" + word + "," + str(row) + "," + str(column - len(word))  + ">")
         elif word:
