@@ -39,7 +39,7 @@ class Token:
             return (str("<" + str(self.ttk) + "," + str(self.l) + "," + str(self.c) +  ">"))        
         else:
             return (str("<"+ str(self.ttk) + ","+str(self.lexema)+ "," + str(self.l) + "," + str(self.c) + ">"))
-		  
+          
 
 def skipToNextLine():
     global column, row
@@ -90,7 +90,7 @@ def main():
         c = obtenerCaracterSiguiente()
     print(*allTokens, sep = "\n")
     if(throwError):
-        print("Error lexico(linea:"+str(errorRow+1)+",posicion:"+str(errorCol+1)+")")
+        print(">>> Error lexico(linea:"+str(errorRow+1)+",posicion:"+str(errorCol+1)+")")
         
     
 def delta(estadoActual, caracterLeido):
@@ -139,12 +139,14 @@ def delta(estadoActual, caracterLeido):
             return 12
         
         ##Triviales
+        ##TODO: Estos dos primeros no son realmente triviales, 5+3 son 3 tokens, +3 es un token
         elif(caracterLeido == "+"):
             allTokens.append(Token("tk_suma",startingTokenColumn+1,startingTokenRow+1))
             return 0
         elif(caracterLeido == "-"):
             allTokens.append(Token("tk_resta",startingTokenColumn+1,startingTokenRow+1))
             return 0
+        ##
         elif(caracterLeido == "*"):
             allTokens.append(Token("tk_mult",startingTokenColumn+1,startingTokenRow+1))
             return 0
@@ -162,9 +164,6 @@ def delta(estadoActual, caracterLeido):
             return 0
         elif(caracterLeido == "("):
             allTokens.append(Token("tk_par_izq",startingTokenColumn+1,startingTokenRow+1))
-            return 0
-        elif(caracterLeido == ")"):
-            allTokens.append(Token("tk_par_der",startingTokenColumn+1,startingTokenRow+1))
             return 0
         elif(caracterLeido == ")"):
             allTokens.append(Token("tk_par_der",startingTokenColumn+1,startingTokenRow+1))
@@ -212,7 +211,7 @@ def delta(estadoActual, caracterLeido):
         if(caracterLeido == "/"):
             return 0
         else:
-            return 2 ##Si el * no estaba seguido de
+            return 2 ##Si el * no estaba seguido de /
         
     if(estadoActual == 4): #Inicio de Cadena Anterior "
         if(caracterLeido == "\""):#Fin de cadena "
