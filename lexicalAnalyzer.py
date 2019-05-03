@@ -2,6 +2,7 @@ keywords = [
   "and", "constantes", "hasta", "matriz", "paso", "registro", "sino", "vector", "archivo",
   "desde", "inicio", "mientras", "subrutina", "repetir", "tipos", "caso", "eval", "lib",
   "not", "programa", "retorna", "var", "const", "fin", "libext", "or", "ref", "si", "variables",
+  "numerico", "cadena", "logico",
   
   "dim", "imprimir", "cls", "leer", "set_ifs", "abs", "arctan", "ascii", "cos", "dec",
   "eof", "exp", "get_ifs", "inc", "int", "log", "lower", "mem", "ord", "paramval",
@@ -36,11 +37,16 @@ class Token:
 
 def skipToNextLine():
     global column, row
-    column = 0
+    column = -1 ##Tiene que ser -1 para que la siguiente llamada lo haga 0 (TENER CUIDADO)
     row += 1
 
-def isAlnumOrUnderscore(stringToCheck):
-    return stringToCheck.isalnum() or stringToCheck == "_"
+def isAlphaOrUnderscoreOrNi(stringToCheck):
+    return stringToCheck.isalpha() or stringToCheck == "_" or stringToCheck == "ñ" or stringToCheck == "Ñ"
+
+def isAlnumOrUnderscoreOrNi(stringToCheck):
+    ##TODO: no permitir caracteres acentuados
+    ## áéíóú deberian dar falso
+    return stringToCheck.isalnum() or stringToCheck == "_" or stringToCheck == "ñ" or stringToCheck == "Ñ"
 
 
 def obtenerCaracterSiguiente():
@@ -86,15 +92,27 @@ def delta(estadoActual, caracterLeido):
             return 1
         elif(caracterLeido == "\\"):
             return 3
+        
+        ##3 maneras de hacer una cadena
         elif(caracterLeido == "\""): 
             word = "\""
             return 4
         elif(caracterLeido == "'"): 
             word = "'"
             return 5
-        elif(caracterLeido == "“"): 
+        elif(caracterLeido == "“"):
             word = "“"
             return 6
+        ##
+        #numeros
+        elif(caracterLeido.isdecimal()):
+            word = caracterLeido
+            return 7
+        ##ids y palabras reservadas
+        
+        elif(isAlphaOrUnderscoreOrNi(caracterLeido)):
+            word = caracterLeido
+            return 9
         
         ##Triviales
         elif(caracterLeido == "+"):
@@ -148,7 +166,7 @@ def delta(estadoActual, caracterLeido):
         elif(caracterLeido == "*"): # /*
             return 2
         else: # / (division)
-            noAvanzar()
+            noAvanzar() ##Tuvimos que leer un caracter de mas para saber que era este, nos "regresamos" 1 caracter
             allTokens.append(Token("tk_division",startingTokenColumn+1,startingTokenRow+1))
             return 0
             
@@ -189,6 +207,46 @@ def delta(estadoActual, caracterLeido):
         else: #Continuacion de cadena
             word = word + caracterLeido
             return 6
+        
+    if(estadoActual == 7): # Inicio de Numero
+        if(caracterLeido.isdecimal()):
+            word = word + caracterLeido
+            return 7
+        if(caracterLeido == "."): #Numero Decimal
+            word = word + caracterLeido
+            return 8
+        else:
+            noAvanzar()
+            allTokens.append(Token("tk_num",startingTokenColumn+1,startingTokenRow+1, word))
+            return 0
+            
+    if(estadoActual == 8):# Inicio numero con punto decimal
+        if(caracterLeido.isdecimal()):
+            word = word+caracterLeido
+            return 8
+        else:
+            noAvanzar()
+            allTokens.append(Token("tk_num",startingTokenColumn+1,startingTokenRow+1, word))
+            return 0
+        
+    if(estadoActual == 9): # Inicio identificador o palabra reservada
+        if(isAlnumOrUnderscoreOrNi(caracterLeido)):
+            word = word + caracterLeido
+            return 9
+        else:
+            noAvanzar()
+            if word in keywords:
+                allTokens.append(Token(word,startingTokenColumn+1,startingTokenRow+1))
+                return 0
+            else:
+                allTokens.append(Token("id",startingTokenColumn+1,startingTokenRow+1, word))
+                return 0
+        
+
+    
+
+    
+            
 
 
 if __name__ == "__main__":  
