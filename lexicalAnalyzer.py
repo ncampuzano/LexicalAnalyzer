@@ -70,10 +70,10 @@ def obtenerCaracterSiguiente():
     return lines[row][column]
 
 def noAvanzar():
-    global column, row
+    global column, row,lines
     if(column == 0):
         row = row - 1
-        column = len(f[row])-1
+        column = len(lines[row])-1
     else:
         column = column-1
         
@@ -81,10 +81,12 @@ def main():
     global allTokens, throwError, errorCol, errorRow
     c = obtenerCaracterSiguiente()
     estado = 0
-    while (c != None or estado != -1):
+    while (estado != -1):
         ##TODO: El archivo de entrada debe terminar en un espacio ' ' para reconocer
         ##correctamente algunos caracteres, como el caracter de division /
         estado = delta(estado,c)
+        if(c == None):
+            break
         c = obtenerCaracterSiguiente()
     print(*allTokens, sep = "\n")
     if(throwError):
@@ -97,7 +99,9 @@ def delta(estadoActual, caracterLeido):
     if(estadoActual == 0): ##Ningun Token actualmente en lectura
         startingTokenColumn = column
         startingTokenRow = row
-        if(caracterLeido == "/"):
+        if(caracterLeido == None):
+            return -1
+        elif(caracterLeido == "/"):
             return 1
         elif(caracterLeido == "\\"):
             return 3
@@ -128,7 +132,11 @@ def delta(estadoActual, caracterLeido):
             return 10
         elif(caracterLeido == ">"):
             word = caracterLeido
-            return 10
+            return 11
+
+        elif(caracterLeido == "="):
+            word = caracterLeido
+            return 12
         
         ##Triviales
         elif(caracterLeido == "+"):
@@ -139,6 +147,9 @@ def delta(estadoActual, caracterLeido):
             return 0
         elif(caracterLeido == "*"):
             allTokens.append(Token("tk_mult",startingTokenColumn+1,startingTokenRow+1))
+            return 0
+        elif(caracterLeido == "^"):
+            allTokens.append(Token("tk_exp",startingTokenColumn+1,startingTokenRow+1))
             return 0
         elif(caracterLeido == "%"):
             allTokens.append(Token("tk_mod",startingTokenColumn+1,startingTokenRow+1))
@@ -164,15 +175,18 @@ def delta(estadoActual, caracterLeido):
         elif(caracterLeido == ";"):
             allTokens.append(Token("tk_pyq",startingTokenColumn+1,startingTokenRow+1))
             return 0
-        elif(caracterLeido == "="):
-            allTokens.append(Token("tk_asig",startingTokenColumn+1,startingTokenRow+1))
-            return 0
         elif(caracterLeido == ","):
             allTokens.append(Token("tk_coma",startingTokenColumn+1,startingTokenRow+1))
             return 0
+        elif(caracterLeido == "."):
+            allTokens.append(Token("tk_punto",startingTokenColumn+1,startingTokenRow+1))
+            return 0
         ##End Triviales
-        
+
+        elif(caracterLeido == " " or caracterLeido == "\n" or caracterLeido == "\t"):
+            return 0
         else:
+            print(caracterLeido)
             throwError = True
             errorCol = startingTokenColumn
             errorRow = startingTokenRow
@@ -228,11 +242,13 @@ def delta(estadoActual, caracterLeido):
             return 6
         
     if(estadoActual == 7): # Inicio de Numero
-        if(caracterLeido.isdecimal()):
+        if(caracterLeido == None):
+            allTokens.append(Token("tk_num",startingTokenColumn+1,startingTokenRow+1, word))
+            return 0
+        elif(caracterLeido.isdecimal()):
             word = word + caracterLeido
             return 7
-        if(caracterLeido == "."): #Numero Decimal
-            word = word + caracterLeido
+        elif(caracterLeido == "."): #Numero Decimal
             return 8
         else:
             noAvanzar()
@@ -240,15 +256,29 @@ def delta(estadoActual, caracterLeido):
             return 0
             
     if(estadoActual == 8):# Inicio numero con punto decimal
-        if(caracterLeido.isdecimal()):
-            word = word+caracterLeido
-            return 8
+        if(caracterLeido == None):
+            noAvanzar()
+            allTokens.append(Token("tk_num",startingTokenColumn+1,startingTokenRow+1, word))
+            allTokens.append(Token("tk_punto",column+1,row+1))
+            return 0
+        elif(caracterLeido.isdecimal()):
+            word = word + "."
+            word = word + caracterLeido
+            return 13
         else:
             noAvanzar()
             allTokens.append(Token("tk_num",startingTokenColumn+1,startingTokenRow+1, word))
+            allTokens.append(Token("tk_punto",column+1,row+1))
             return 0
         
     if(estadoActual == 9): # Inicio identificador o palabra reservada
+        if(caracterLeido == None):
+            if word in keywords:
+                allTokens.append(Token(word,startingTokenColumn+1,startingTokenRow+1))
+                return 0
+            else:
+                allTokens.append(Token("id",startingTokenColumn+1,startingTokenRow+1, word))
+                return 0
         if(isAlnumOrUnderscoreOrNi(caracterLeido)):
             word = word + caracterLeido
             return 9
@@ -260,6 +290,7 @@ def delta(estadoActual, caracterLeido):
             else:
                 allTokens.append(Token("id",startingTokenColumn+1,startingTokenRow+1, word))
                 return 0
+            
     if(estadoActual == 10): #Anterior fue <
         if(caracterLeido == ">"):
             allTokens.append(Token("tk_distinto",startingTokenColumn+1,startingTokenRow+1))
@@ -280,7 +311,26 @@ def delta(estadoActual, caracterLeido):
             noAvanzar()
             allTokens.append(Token("tk_mayor",startingTokenColumn+1,startingTokenRow+1))
             return 0
-            
+    if(estadoActual == 12):
+        if(caracterLeido == "="):
+            allTokens.append(Token("tk_igualdad",startingTokenColumn+1,startingTokenRow+1))
+            return 0
+        else:
+            noAvanzar()
+            allTokens.append(Token("tk_asig",startingTokenColumn+1,startingTokenRow+1))
+            return 0
+        
+    if(estadoActual == 13):# Continuacion numero con punto decimal
+        if(caracterLeido == None):
+            allTokens.append(Token("tk_num",startingTokenColumn+1,startingTokenRow+1, word))
+            return 0
+        if(caracterLeido.isdecimal()):
+            word = word+caracterLeido
+            return 13
+        else:
+            noAvanzar()
+            allTokens.append(Token("tk_num",startingTokenColumn+1,startingTokenRow+1, word))
+            return 0
 
 if __name__ == "__main__":  
     main()
