@@ -1,3 +1,5 @@
+import sys
+
 keywords = [
   "and", "constantes", "hasta", "matriz", "paso", "registro", "sino", "vector", "archivo",
   "desde", "inicio", "mientras", "subrutina", "repetir", "tipos", "caso", "eval", "lib",
@@ -17,6 +19,10 @@ startingTokenRow = 0
 allTokens = []
 lines = None
 word = ""
+throwError = False
+errorCol = 0
+errorRow = 0
+
 class Token:
     ttk = -1
     l = -1
@@ -72,18 +78,21 @@ def noAvanzar():
         column = column-1
         
 def main():
-    global allTokens
+    global allTokens, throwError, errorCol, errorRow
     c = obtenerCaracterSiguiente()
     estado = 0
-    while (c != None):
+    while (c != None or estado != -1):
         ##TODO: El archivo de entrada debe terminar en un espacio ' ' para reconocer
         ##correctamente algunos caracteres, como el caracter de division /
         estado = delta(estado,c)
         c = obtenerCaracterSiguiente()
     print(*allTokens, sep = "\n")
+    if(throwError):
+        print("Error lexico(linea:"+str(errorRow+1)+",posicion:"+str(errorCol+1)+")")
+        
     
 def delta(estadoActual, caracterLeido):
-    global allTokens, column, row, startingTokenColumn, startingTokenRow, word
+    global allTokens, column, row, startingTokenColumn, startingTokenRow, word, throwError, errorCol, errorRow
     
     if(estadoActual == 0): ##Ningun Token actualmente en lectura
         startingTokenColumn = column
@@ -113,6 +122,13 @@ def delta(estadoActual, caracterLeido):
         elif(isAlphaOrUnderscoreOrNi(caracterLeido)):
             word = caracterLeido
             return 9
+
+        elif(caracterLeido == "<"):
+            word = caracterLeido
+            return 10
+        elif(caracterLeido == ">"):
+            word = caracterLeido
+            return 10
         
         ##Triviales
         elif(caracterLeido == "+"):
@@ -157,7 +173,10 @@ def delta(estadoActual, caracterLeido):
         ##End Triviales
         
         else:
-            return 0
+            throwError = True
+            errorCol = startingTokenColumn
+            errorRow = startingTokenRow
+            return -1
         
     if(estadoActual == 1): #El anterior fue un /
         if(caracterLeido == "/"): # //
@@ -241,13 +260,27 @@ def delta(estadoActual, caracterLeido):
             else:
                 allTokens.append(Token("id",startingTokenColumn+1,startingTokenRow+1, word))
                 return 0
+    if(estadoActual == 10): #Anterior fue <
+        if(caracterLeido == ">"):
+            allTokens.append(Token("tk_distinto",startingTokenColumn+1,startingTokenRow+1))
+            return 0
+        elif(caracterLeido == "="):
+            allTokens.append(Token("tk_menorigual",startingTokenColumn+1,startingTokenRow+1))
+            return 0
+        else:
+            noAvanzar()
+            allTokens.append(Token("tk_menor",startingTokenColumn+1,startingTokenRow+1))
+            return 0
         
-
-    
-
-    
+    if(estadoActual == 11): #Anterior fue <
+        if(caracterLeido == "="):
+            allTokens.append(Token("tk_mayorigual",startingTokenColumn+1,startingTokenRow+1))
+            return 0
+        else:
+            noAvanzar()
+            allTokens.append(Token("tk_mayor",startingTokenColumn+1,startingTokenRow+1))
+            return 0
             
-
 
 if __name__ == "__main__":  
     main()
