@@ -58,10 +58,7 @@ def isAlphaOrUnderscoreOrNi(stringToCheck):
     return stringToCheck.isalpha() or stringToCheck == "_" or stringToCheck == "ñ" or stringToCheck == "Ñ"
 
 def isAlnumOrUnderscoreOrNi(stringToCheck):
-    ##TODO: no permitir caracteres acentuados
-    ## áéíóú deberian dar falso
     return stringToCheck.isalnum() or stringToCheck == "_" or stringToCheck == "ñ" or stringToCheck == "Ñ"
-
 
 def obtenerCaracterSiguiente():
     global column, row, lines
@@ -104,7 +101,13 @@ def delta(estadoActual, caracterLeido):
     if(estadoActual == 0): ##Ningun Token actualmente en lectura
         startingTokenColumn = column
         startingTokenRow = row
+
         if(caracterLeido == None):
+            return -1
+        if(caracterLeido.lower() == "á" or caracterLeido.lower() == "é" or caracterLeido.lower() == "í" or caracterLeido.lower() == "ó" or caracterLeido.lower() == "ú"):
+            throwError = True
+            errorCol = startingTokenColumn
+            errorRow = startingTokenRow
             return -1
         elif(caracterLeido == "/"):
             return 1
@@ -326,6 +329,11 @@ def delta(estadoActual, caracterLeido):
             noAvanzar()
             allTokens.append(Token("id",startingTokenColumn+1,startingTokenRow+1, word))
             return 0
+        if(caracterLeido.lower() == "á" or caracterLeido.lower() == "é" or caracterLeido.lower() == "í" or caracterLeido.lower() == "ó" or caracterLeido.lower() == "ú"):
+            throwError = True
+            errorCol = startingTokenColumn
+            errorRow = startingTokenRow
+            return -1
         if(isAlnumOrUnderscoreOrNi(caracterLeido)):
             word = word + caracterLeido
             return 9
