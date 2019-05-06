@@ -22,6 +22,7 @@ word = ""
 throwError = False
 errorCol = 0
 errorRow = 0
+escape = False
 
 class Token:
     ttk = -1
@@ -94,7 +95,7 @@ def main():
         
     
 def delta(estadoActual, caracterLeido):
-    global allTokens, column, row, startingTokenColumn, startingTokenRow, word, throwError, errorCol, errorRow
+    global allTokens, column, row, escape, startingTokenColumn, startingTokenRow, word, throwError, errorCol, errorRow
     
     if(estadoActual == 0): ##Ningun Token actualmente en lectura
         startingTokenColumn = column
@@ -214,29 +215,44 @@ def delta(estadoActual, caracterLeido):
             return 2 ##Si el * no estaba seguido de /
         
     if(estadoActual == 4): #Inicio de Cadena Anterior "
-        if(caracterLeido == "\""):#Fin de cadena "
+        if(caracterLeido == "\"" and not escape):#Fin de cadena "
             word = word + "\""
             allTokens.append(Token("tk_cadena",startingTokenColumn+1,startingTokenRow+1, word))
             return 0
+        if(caracterLeido == "\\" ):
+            escape = True
+            word = word + caracterLeido
+            return 4
         else: #Continuacion de cadena
+            escape = False
             word = word + caracterLeido
             return 4
         
     if(estadoActual == 5): #Inicio de Cadena Anterior '
-        if(caracterLeido == "'"):#Fin de cadena '
+        if(caracterLeido == "'" and not escape):#Fin de cadena '
             word = word + "'"
             allTokens.append(Token("tk_cadena",startingTokenColumn+1,startingTokenRow+1, word))
             return 0
+        if(caracterLeido == "\\" ):
+            escape = True
+            word = word + caracterLeido
+            return 5
         else: #Continuacion de cadena
+            escape = False
             word = word + caracterLeido
             return 5
         
     if(estadoActual == 6): #Inicio de Cadena Anterior “
-        if(caracterLeido == "”"):#Fin de cadena ”
+        if(caracterLeido == "”" and not escape):#Fin de cadena ”
             word = word + "”"
             allTokens.append(Token("tk_cadena",startingTokenColumn+1,startingTokenRow+1, word))
             return 0
+        if(caracterLeido == "\\" ):
+            escape = True
+            word = word + caracterLeido
+            return 6
         else: #Continuacion de cadena
+            escape = False
             word = word + caracterLeido
             return 6
         
