@@ -66,7 +66,7 @@ def isAlnumOrUnderscoreOrNi(stringToCheck):
 def obtenerCaracterSiguiente():
     global column, row, lines
     if not lines:
-        with open("test.txt","r") as f:
+        with open("test.txt","r", encoding="utf-8") as f:
             lines = f.readlines()
             return lines[0][0]
     column += 1
@@ -172,6 +172,12 @@ def delta(estadoActual, caracterLeido):
             return 0
         elif(caracterLeido == ")"):
             allTokens.append(Token("tk_par_der",startingTokenColumn+1,startingTokenRow+1))
+            return 0
+        elif(caracterLeido == "["):
+            allTokens.append(Token("tk_brac_izq",startingTokenColumn+1,startingTokenRow+1))
+            return 0
+        elif(caracterLeido == "]"):
+            allTokens.append(Token("tk_brac_der",startingTokenColumn+1,startingTokenRow+1))
             return 0
         elif(caracterLeido == ":"):
             allTokens.append(Token("tk_dospuntos",startingTokenColumn+1,startingTokenRow+1))
@@ -316,7 +322,7 @@ def delta(estadoActual, caracterLeido):
             else:
                 allTokens.append(Token("id",startingTokenColumn+1,startingTokenRow+1, word))
                 return 0
-        if(len(word)) > 32):
+        if(len(word) > 32):
             noAvanzar()
             allTokens.append(Token("id",startingTokenColumn+1,startingTokenRow+1, word))
             return 0
