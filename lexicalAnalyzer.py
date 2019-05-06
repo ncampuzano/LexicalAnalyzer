@@ -1,3 +1,10 @@
+# Lenguajes de programacion
+# Juan Manuel Alvarez Duque
+# Nicolas Campuzano Angulo
+# Taller 1 Analizador lexico para lenguaje SL 
+# 5/6/2019
+# Se requiere un archivo "./test.txt" para su funcionamiento.
+
 import sys
 
 keywords = [
@@ -83,8 +90,6 @@ def main():
     c = obtenerCaracterSiguiente()
     estado = 0
     while (estado != -1):
-        ##TODO: El archivo de entrada debe terminar en un espacio ' ' para reconocer
-        ##correctamente algunos caracteres, como el caracter de division /
         estado = delta(estado,c)
         if(c == None):
             break
@@ -92,8 +97,7 @@ def main():
     print(*allTokens, sep = "\n")
     if(throwError):
         print(">>> Error lexico(linea:"+str(errorRow+1)+",posicion:"+str(errorCol+1)+")")
-        
-    
+           
 def delta(estadoActual, caracterLeido):
     global allTokens, column, row, escape, startingTokenColumn, startingTokenRow, word, throwError, errorCol, errorRow
     
@@ -215,6 +219,11 @@ def delta(estadoActual, caracterLeido):
             return 2 ##Si el * no estaba seguido de /
         
     if(estadoActual == 4): #Inicio de Cadena Anterior "
+        if(caracterLeido == None):
+          throwError = True
+          errorCol = startingTokenColumn
+          errorRow = startingTokenRow
+          return -1
         if(caracterLeido == "\"" and not escape):#Fin de cadena "
             word = word + "\""
             allTokens.append(Token("tk_cadena",startingTokenColumn+1,startingTokenRow+1, word))
@@ -229,6 +238,11 @@ def delta(estadoActual, caracterLeido):
             return 4
         
     if(estadoActual == 5): #Inicio de Cadena Anterior '
+        if(caracterLeido == None):
+          throwError = True
+          errorCol = startingTokenColumn
+          errorRow = startingTokenRow
+          return -1
         if(caracterLeido == "'" and not escape):#Fin de cadena '
             word = word + "'"
             allTokens.append(Token("tk_cadena",startingTokenColumn+1,startingTokenRow+1, word))
@@ -243,6 +257,11 @@ def delta(estadoActual, caracterLeido):
             return 5
         
     if(estadoActual == 6): #Inicio de Cadena Anterior “
+        if(caracterLeido == None):
+            throwError = True
+            errorCol = startingTokenColumn
+            errorRow = startingTokenRow
+            return -1
         if(caracterLeido == "”" and not escape):#Fin de cadena ”
             word = word + "”"
             allTokens.append(Token("tk_cadena",startingTokenColumn+1,startingTokenRow+1, word))
@@ -297,6 +316,10 @@ def delta(estadoActual, caracterLeido):
             else:
                 allTokens.append(Token("id",startingTokenColumn+1,startingTokenRow+1, word))
                 return 0
+        if(len(word)) > 32):
+            noAvanzar()
+            allTokens.append(Token("id",startingTokenColumn+1,startingTokenRow+1, word))
+            return 0
         if(isAlnumOrUnderscoreOrNi(caracterLeido)):
             word = word + caracterLeido
             return 9
@@ -361,13 +384,25 @@ def delta(estadoActual, caracterLeido):
       if(caracterLeido == '+' or caracterLeido == '-'):
             word = word + caracterLeido
             return 14
-      if(caracterLeido.isdecimal()):
+      elif(caracterLeido.isdecimal()):
             word = word+caracterLeido
-            return 7
+            return 15
       throwError = True
       errorCol = startingTokenColumn
       errorRow = startingTokenRow
       return -1
+    if(estadoActual == 15): # Despues del e+/-num
+        if(caracterLeido == None):
+            allTokens.append(Token("tk_num",startingTokenColumn+1,startingTokenRow+1, word))
+            return 0
+        if(caracterLeido.isdecimal()):
+            word = word + caracterLeido
+            return 15
+        else:
+            noAvanzar()
+            allTokens.append(Token("tk_num",startingTokenColumn+1,startingTokenRow+1, word))
+            return 0
+
 if __name__ == "__main__":  
     main()
             
