@@ -186,7 +186,7 @@ def delta(estadoActual, caracterLeido):
         elif(caracterLeido == " " or caracterLeido == "\n" or caracterLeido == "\t"):
             return 0
         else:
-            print(caracterLeido)
+            # print(caracterLeido)
             throwError = True
             errorCol = startingTokenColumn
             errorRow = startingTokenRow
@@ -265,6 +265,9 @@ def delta(estadoActual, caracterLeido):
             return 7
         elif(caracterLeido == "."): #Numero Decimal
             return 8
+        elif(caracterLeido == 'e' or caracterLeido == 'E'):
+            word = word + caracterLeido
+            return 14
         else:
             noAvanzar()
             allTokens.append(Token("tk_num",startingTokenColumn+1,startingTokenRow+1, word))
@@ -342,11 +345,29 @@ def delta(estadoActual, caracterLeido):
         if(caracterLeido.isdecimal()):
             word = word+caracterLeido
             return 13
+        elif(caracterLeido == 'e' or caracterLeido == 'E'):
+            word = word + caracterLeido
+            return 14
         else:
             noAvanzar()
             allTokens.append(Token("tk_num",startingTokenColumn+1,startingTokenRow+1, word))
             return 0
-
+    if(estadoActual == 14): #Notacion cientifica
+      if(caracterLeido == None):
+        throwError = True
+        errorCol = startingTokenColumn
+        errorRow = startingTokenRow
+        return -1
+      if(caracterLeido == '+' or caracterLeido == '-'):
+            word = word + caracterLeido
+            return 14
+      if(caracterLeido.isdecimal()):
+            word = word+caracterLeido
+            return 7
+      throwError = True
+      errorCol = startingTokenColumn
+      errorRow = startingTokenRow
+      return -1
 if __name__ == "__main__":  
     main()
             
