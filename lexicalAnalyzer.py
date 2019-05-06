@@ -241,6 +241,10 @@ def delta(estadoActual, caracterLeido):
             escape = True
             word = word + caracterLeido
             return 4
+        if(caracterLeido == "\n"):
+            escape = False
+            word = word + "\\n"
+            return 4
         else: #Continuacion de cadena
             escape = False
             word = word + caracterLeido
@@ -260,6 +264,10 @@ def delta(estadoActual, caracterLeido):
             escape = True
             word = word + caracterLeido
             return 5
+        if(caracterLeido == "\n"):
+            escape = False
+            word = word + "\\n"
+            return 5
         else: #Continuacion de cadena
             escape = False
             word = word + caracterLeido
@@ -278,6 +286,10 @@ def delta(estadoActual, caracterLeido):
         if(caracterLeido == "\\" ):
             escape = True
             word = word + caracterLeido
+            return 6
+        if(caracterLeido == "\n"):
+            escape = False
+            word = word + "\\n"
             return 6
         else: #Continuacion de cadena
             escape = False
